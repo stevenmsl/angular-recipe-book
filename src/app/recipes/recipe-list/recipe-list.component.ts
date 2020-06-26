@@ -1,6 +1,7 @@
 import { Component, OnInit, EventEmitter, Output } from "@angular/core";
 import { Recipe } from "../recipe.model";
 import { RecipeService } from "../recipe.service";
+import { Router, ActivatedRoute } from "@angular/router";
 
 @Component({
   selector: "app-recipe-list",
@@ -22,7 +23,11 @@ export class RecipeListComponent implements OnInit {
   //     'https://cdn.pixabay.com/photo/2016/06/15/19/09/food-1459693_960_720.jpg'
   //   ),
   // ];
-  constructor(private recipeService: RecipeService) {
+  constructor(
+    private recipeService: RecipeService,
+    private router: Router,
+    private route: ActivatedRoute,
+  ) {
   }
   ngOnInit(): void {
     this.recipes = this.recipeService.getRecipes();
@@ -30,5 +35,8 @@ export class RecipeListComponent implements OnInit {
   onRecipeSelected(recipe: Recipe) {
     // re-emit what you have received from child component, recipe-item.
     this.recipeSelected.emit(recipe);
+  }
+  onNewRecipe() {
+    this.router.navigate(["new"], { relativeTo: this.route });
   }
 }
