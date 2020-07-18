@@ -4,6 +4,7 @@ import { catchError, tap } from 'rxjs/operators';
 import { throwError, Subject, BehaviorSubject } from 'rxjs';
 import { User } from './user.model';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 export interface AuthResponseData {
   kind: string; // Got removed from the doc but it’s still there
@@ -17,7 +18,7 @@ export interface AuthResponseData {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiKey = 'AIzaSyCEYPM8hH6Q1H_JMZkTQd0j0qGPLx4UAT0';
+  private apiKey = environment.firebaseAPIKey; //  'AIzaSyCEYPM8hH6Q1H_JMZkTQd0j0qGPLx4UAT0';
   private signupUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${this.apiKey}`;
   private signinUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.apiKey}`;
 
