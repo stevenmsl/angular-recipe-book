@@ -4,6 +4,8 @@ import { ShoppingListService } from './shopping-list.service';
 import { Subscription, Observable } from 'rxjs';
 import { LoggingService } from '../logging.service';
 import { Store } from '@ngrx/store';
+import * as sla from './store/shopping-list.actions';
+import * as fromApp from '../store/app.reducer';
 
 @Component({
   selector: 'app-shopping-list',
@@ -35,18 +37,23 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
           new Ingredient('Tomatoes', 10)],
         };
     */
-    private store: Store<{ shoppingList: { ingredients: Ingredient[] } }>
+    private store: Store<fromApp.AppState>
   ) {}
 
   ngOnInit(): void {
+    // select the piece of state you need.
+    // Be aware that the return type is an
+    // observable.
     this.ingredients = this.store.select('shoppingList');
-
-    this.loggingService.printLog('Hello from ShoppingListComponent');
+    //this.loggingService.printLog('Hello from ShoppingListComponent');
   }
 
   onEditItem(index: number) {
     // use service to communicate with shopping-edit component
-    this.slService.startedEditing.next(index);
+    //this.slService.startedEditing.next(index);
+
+    // use ngrx
+    this.store.dispatch(new sla.StartEdit(index));
   }
 
   onIngredientAdded(ingredient: Ingredient) {

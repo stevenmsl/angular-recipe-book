@@ -10,10 +10,16 @@ import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { AuthService } from './auth.service';
+import { Store } from '@ngrx/store';
+import * as fromApp from '../store/app.reducer';
 
 @Injectable({ providedIn: 'root' })
 export class AuthGuard implements CanActivate {
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private store: Store<fromApp.AppState>
+  ) {}
 
   canActivate(
     route: ActivatedRouteSnapshot,
@@ -23,9 +29,10 @@ export class AuthGuard implements CanActivate {
     | UrlTree
     | Observable<boolean | UrlTree>
     | Promise<boolean | UrlTree> {
-    return this.authService.user.pipe(
+    return this.store.select('auth').pipe(
       // stop listening to the user subject once you got the current user value
       take(1),
+      map((authState) => authState.user),
       map((user) => {
         const isAuth = !!user;
         if (isAuth) {

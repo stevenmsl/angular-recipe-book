@@ -5,6 +5,9 @@ import { throwError, Subject, BehaviorSubject } from 'rxjs';
 import { User } from './user.model';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
+import * as fromApp from '../store/app.reducer';
+import { Store } from '@ngrx/store';
+import * as aa from './store/auth.actions';
 
 export interface AuthResponseData {
   kind: string; // Got removed from the doc but it’s still there
@@ -35,130 +38,150 @@ export class AuthService {
       the user has successfully logged on. You want to access the 
       user object at a later time, for example to access secure data (recipes).            
   */
-  user = new BehaviorSubject<User>(null);
+  //user = new BehaviorSubject<User>(null);
   private tokenExpirationTimer: any;
 
-  constructor(private http: HttpClient, private router: Router) {}
-  signup(email: string, password: string) {
-    return this.http
-      .post<AuthResponseData>(this.signupUrl, {
-        email,
-        password,
-        returnSecureToken: true,
-      })
-      .pipe(
-        // put the error handling logic here instead of the Auth component
-        // as the logic has nothing to do with the UI.
-        catchError(this.handleError),
-        tap((resData: AuthResponseData) => {
-          this.handleAuthentication(
-            resData.email,
-            resData.localId,
-            resData.idToken,
-            +resData.expiresIn
-          );
-        })
-      );
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private store: Store<fromApp.AppState>
+  ) {}
+
+  setLogoutTimer(expirationDuration: number) {
+    this.tokenExpirationTimer = setTimeout(() => {
+      this.store.dispatch(new aa.Logout());
+    }, expirationDuration);
   }
 
-  login(email: string, password: string) {
-    return this.http
-      .post<AuthResponseData>(this.signinUrl, {
-        email,
-        password,
-        returnSecureToken: true,
-      })
-      .pipe(
-        catchError(this.handleError),
-        tap((resData: AuthResponseData) => {
-          this.handleAuthentication(
-            resData.email,
-            resData.localId,
-            resData.idToken,
-            +resData.expiresIn
-          );
-        })
-      );
-  }
-
-  logout() {
-    this.user.next(null);
-    this.router.navigate(['/auth']);
-    localStorage.removeItem('userData');
+  clearLogoutTimer() {
     if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
-    }
-    this.tokenExpirationTimer = null;
-  }
-
-  autoLogout(expirationDuration: number) {
-    this.tokenExpirationTimer = setTimeout(() => {
-      this.logout();
-    }, expirationDuration);
-
-    // this.tokenExpirationTimer = setTimeout(() => {
-    //   this.logout();
-    // }, 2000);
-  }
-
-  autoLogin() {
-    const userData: {
-      email: string;
-      id: string;
-      _token: string;
-      _tokenExpirationDate: string;
-    } = JSON.parse(localStorage.getItem('userData'));
-    if (!userData) {
-      return;
-    }
-
-    const loadedUser = new User(
-      userData.email,
-      userData.id,
-      userData._token,
-      new Date(userData._tokenExpirationDate)
-    );
-
-    // make sure there is a valid token
-    if (loadedUser.token) {
-      this.user.next(loadedUser);
-
-      const expirationDuration =
-        new Date(userData._tokenExpirationDate).getTime() -
-        new Date().getTime();
-      this.autoLogout(expirationDuration);
+      this.tokenExpirationTimer = null;
     }
   }
 
-  private handleError(errorRes: HttpErrorResponse) {
-    let errorMessage = 'An unknown error occurred!';
-    if (!errorRes.error || !errorRes.error.error) {
-      return throwError(errorMessage);
-    }
-    switch (errorRes.error.error.message) {
-      case 'EMAIL_EXISTS':
-        errorMessage = 'This email exists already';
-        break;
-      case 'EMAIL_NOT_FOUND':
-        errorMessage = 'This email does not exist';
-        break;
-      case 'INVALID_PASSWORD':
-        errorMessage = 'This password is not correct';
-        break;
-    }
-    return throwError(errorMessage);
-  }
+  // signup(email: string, password: string) {
+  //   return this.http
+  //     .post<AuthResponseData>(this.signupUrl, {
+  //       email,
+  //       password,
+  //       returnSecureToken: true,
+  //     })
+  //     .pipe(
+  //       // put the error handling logic here instead of the Auth component
+  //       // as the logic has nothing to do with the UI.
+  //       catchError(this.handleError),
+  //       tap((resData: AuthResponseData) => {
+  //         this.handleAuthentication(
+  //           resData.email,
+  //           resData.localId,
+  //           resData.idToken,
+  //           +resData.expiresIn
+  //         );
+  //       })
+  //     );
+  // }
 
-  private handleAuthentication(
-    email: string,
-    userId: string,
-    token: string,
-    expiresIn: number
-  ) {
-    const expirationDate = new Date(new Date().getTime() + expiresIn * 1000);
-    const user = new User(email, userId, token, expirationDate);
-    this.user.next(user); // notify subscribers
-    this.autoLogout(expiresIn * 1000);
-    localStorage.setItem('userData', JSON.stringify(user));
-  }
+  // login(email: string, password: string) {
+  //   return this.http
+  //     .post<AuthResponseData>(this.signinUrl, {
+  //       email,
+  //       password,
+  //       returnSecureToken: true,
+  //     })
+  //     .pipe(
+  //       catchError(this.handleError),
+  //       tap((resData: AuthResponseData) => {
+  //         this.handleAuthentication(
+  //           resData.email,
+  //           resData.localId,
+  //           resData.idToken,
+  //           +resData.expiresIn
+  //         );
+  //       })
+  //     );
+  // }
+
+  // logout() {
+  //   // this.user.next(null);
+  //   this.store.dispatch(new aa.Logout());
+  //   //this.router.navigate(['/auth']);
+  //   localStorage.removeItem('userData');
+  //   if (this.tokenExpirationTimer) {
+  //     clearTimeout(this.tokenExpirationTimer);
+  //   }
+  //   this.tokenExpirationTimer = null;
+  // }
+
+  // autoLogin() {
+  //   const userData: {
+  //     email: string;
+  //     id: string;
+  //     _token: string;
+  //     _tokenExpirationDate: string;
+  //   } = JSON.parse(localStorage.getItem('userData'));
+  //   if (!userData) {
+  //     return;
+  //   }
+
+  //   const loadedUser = new User(
+  //     userData.email,
+  //     userData.id,
+  //     userData._token,
+  //     new Date(userData._tokenExpirationDate)
+  //   );
+
+  //   // make sure there is a valid token
+  //   if (loadedUser.token) {
+  //     //this.user.next(loadedUser);
+  //     this.store.dispatch(
+  //       new aa.AuthenticateSuccess({
+  //         email: loadedUser.email,
+  //         userId: loadedUser.id,
+  //         token: loadedUser.token,
+  //         expirationDate: new Date(userData._tokenExpirationDate),
+  //       })
+  //     );
+
+  //     const expirationDuration =
+  //       new Date(userData._tokenExpirationDate).getTime() -
+  //       new Date().getTime();
+  //     this.autoLogout(expirationDuration);
+  //   }
+  // }
+
+  // private handleError(errorRes: HttpErrorResponse) {
+  //   let errorMessage = 'An unknown error occurred!';
+  //   if (!errorRes.error || !errorRes.error.error) {
+  //     return throwError(errorMessage);
+  //   }
+  //   switch (errorRes.error.error.message) {
+  //     case 'EMAIL_EXISTS':
+  //       errorMessage = 'This email exists already';
+  //       break;
+  //     case 'EMAIL_NOT_FOUND':
+  //       errorMessage = 'This email does not exist';
+  //       break;
+  //     case 'INVALID_PASSWORD':
+  //       errorMessage = 'This password is not correct';
+  //       break;
+  //   }
+  //   return throwError(errorMessage);
+  // }
+
+  // private handleAuthentication(
+  //   email: string,
+  //   userId: string,
+  //   token: string,
+  //   expiresIn: number
+  // ) {
+  //   const expirationDate = new Date(new Date().getTime() + expiresIn * 1000);
+  //   const user = new User(email, userId, token, expirationDate);
+  //   //this.user.next(user); // notify subscribers
+  //   this.store.dispatch(
+  //     new aa.AuthenticateSuccess({ email, userId, token, expirationDate })
+  //   );
+  //   this.autoLogout(expiresIn * 1000);
+  //   localStorage.setItem('userData', JSON.stringify(user));
+  // }
 }

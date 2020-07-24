@@ -8,23 +8,29 @@ import {
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
-import { take, exhaustMap } from 'rxjs/operators';
+import { take, exhaustMap, map } from 'rxjs/operators';
+import * as fromApp from '../store/app.reducer';
+import { Store } from '@ngrx/store';
 
 @Injectable()
 export class AuthInterceptorService implements HttpInterceptor {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private store: Store<fromApp.AppState>
+  ) {}
 
   intercept(
     req: HttpRequest<any>,
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
-    return this.authService.user.pipe(
+    return this.store.select('auth').pipe(
       /* 
            - take: you need to take a snapshot of data at a particular point in time 
              but do not require further emissions.
            - in this case we only interested in accessing the current user object 
         */
       take(1),
+      map((authState) => authState.user),
       /*
            - exhaustMap: Projects each source value to an Observable which 
              is merged in the output Observable only if the previous projected 
