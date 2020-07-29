@@ -5,10 +5,13 @@ import {
   Output,
   OnDestroy,
 } from '@angular/core';
+import { Store } from '@ngrx/store';
+import * as fromApp from '../../store/app.reducer';
 import { Recipe } from '../recipe.model';
 import { RecipeService } from '../recipe.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-recipe-list',
@@ -23,26 +26,18 @@ export class RecipeListComponent implements OnInit, OnDestroy {
 
   @Output()
   recipeSelected = new EventEmitter<Recipe>();
-  // moved to service
-  // recipes: Recipe[] = [
-  //   new Recipe(
-  //     'A Test Recipe',
-  //     'This is simply a test',
-  //     'https://cdn.pixabay.com/photo/2016/06/15/19/09/food-1459693_960_720.jpg'
-  //   ),
-  // ];
   constructor(
-    private recipeService: RecipeService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private store: Store<fromApp.AppState>
   ) {}
   ngOnInit(): void {
-    this.subscription = this.recipeService.recipesChanged.subscribe(
-      (recipes: Recipe[]) => {
+    this.subscription = this.store
+      .select('recipes')
+      .pipe(map((recipesState) => recipesState.recipes))
+      .subscribe((recipes: Recipe[]) => {
         this.recipes = recipes;
-      }
-    );
-    this.recipes = this.recipeService.getRecipes();
+      });
   }
   onRecipeSelected(recipe: Recipe) {
     // re-emit what you have received from child component, recipe-item.

@@ -14,6 +14,7 @@ import { Store } from '@ngrx/store';
 import * as fromApp from '../store/app.reducer';
 import { map } from 'rxjs/operators';
 import * as aa from '../auth/store/auth.actions';
+import * as ra from '../recipes/store/recipe.actions';
 
 @Component({
   selector: 'app-header',
@@ -48,13 +49,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   onSaveData() {
-    this.dataStorageService.storeRecipes();
+    this.store.dispatch(new ra.StoreRecipes());
+    //this.dataStorageService.storeRecipes();
   }
   onFetchData() {
-    // simply kicks off the process and not care for
-    // the http response as we are not displaying
-    // recipes in this component
-    this.dataStorageService.fetchRecipes().subscribe();
+    this.store.dispatch(new ra.FetchRecipes());
   }
 
   onLogout() {

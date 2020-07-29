@@ -41,6 +41,7 @@ const handleAuthentication = (
     userId,
     token,
     expirationDate,
+    redirect: true,
   });
 };
 
@@ -178,6 +179,7 @@ export class AuthEffects {
           userId: loadedUser.id,
           token: loadedUser.token,
           expirationDate: new Date(userData._tokenExpirationDate),
+          redirect: false, // you want to stay on the same page
         });
       }
 
@@ -199,8 +201,10 @@ export class AuthEffects {
   @Effect({ dispatch: false })
   authRedirect = this.actions$.pipe(
     ofType(aa.AUTHENTICATE_SUCCESS),
-    tap(() => {
-      this.router.navigate(['/']);
+    tap((authSuccessAction: aa.AuthenticateSuccess) => {
+      if (authSuccessAction.payload.redirect) {
+        this.router.navigate(['/']);
+      }
     })
   );
 
